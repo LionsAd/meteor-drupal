@@ -1,0 +1,115 @@
+<?php
+
+function meteor_menu() {
+  $items['meteor-test'] = array(
+    'title' => 'Meteor Test Page',
+    'page callback' => 'meteor_test_page',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+function meteor_test_page() {
+  $output = <<<EOF
+  <div id="test">
+    Hello World<br>
+  </div>
+EOF;
+
+  meteor_client_join_channel('demo', 'function(data) { console.log(data); }');
+
+  return $output;
+}
+
+function meteor_demo_channel($message) {
+  $mp = meteor_open_channel('demo');
+  meteor_send_message($mp, $message);
+  meteor_close_channel($mp, $message);
+}
+
+function meteor_add_js() {
+  static $added = FALSE;
+
+  if ($added === TRUE) {
+    return;
+  }
+
+  $settings = array();
+ 
+  $hostid = '';
+ 
+  if (isset($_SESSION['meteor_hostid'])) {
+    $hostid = $_SESSION['meteor_hostid'];
+  }
+  else {
+    $hostid = user_password(); 
+    $_SESSION['meteor_hostid'] = $hostid; // Note: This is allowed here as we only support non-cached pages for now
+  }
+
+  $settings['hostid'] = $hostid;
+  $settings['host'] = variable_get('meteor_host', NULL);
+  $settings['mode'] = variable_get('meteor_mode', 'stream');
+  $settings['debug'] = variable_get('meteor_debug', FALSE);
+
+  drupal_set_html_head('<script type="text/javascript" src="http://' . $settings['host']. '/meteor.js"></script>');
+  drupal_add_js(array('meteor' => $settings), 'setting');
+  drupal_add_js(drupal_get_path('module', 'meteor') . '/js/meteor_client.js');
+
+  $added = TRUE;
+}
+
+function meteor_client_join_channel($channelid, $callback, $backtrack = 0, $mode = 'stream') {
+
+  meteor_add_js(); 
+ 
+  $channels = array();
+  $channels[] = array (
+    'channelid' => $channelid,
+    'backtrack' => $backtrack,
+    'callback' => $callback
+  );
+  drupal_add_js(array('meteor' => array('channels' => $channels)), 'setting');
+}
+
+function meteor_open_channel($channelid) {
+  if (!($fp = fsockopen("127.0.0.1", 4671, $errno, $errstr, 5))) {
+    // echo "Meteor not responding\n";
+    // FIXME: Add watchdog
+    return NULL;
+  }
+
+  socket_set_blocking($fp, FALSE);
+  
+  $mp = (object) array(
+    'channelid' => $channelid,
+    'fp' => $fp
+  );
+  return $mp;
+}
+
+function meteor_send_message($mp, $message) {
+  $msg = array(
+    'data' => $message,
+    'channelid' => $mp->channelid 
+  );
+
+  $json_message = rawurlencode(drupal_to_js($msg));
+
+  $out = "ADDMESSAGE ".$mp->channelid." ".$json_message."\n";
+
+  fwrite($mp->fp, $out);
+
+  usleep(10000);
+
+  // FIXME: Check for errors 
+  $buf = fread($mp->fp, 4096);
+
+  return TRUE;
+}
+
+function meteor_close_channel($mp, $close_channel = FALSE) {
+  // TODO: Send CLOSECHANNEL <x> message on close_channel == TRUE
+  fclose($mp->fp);
+}

@@ -1,0 +1,5 @@
+; $Id: $
+name = Meteor Drupal Bridge
+description = Connects to Meteor server to allow realtime streaming
+package = realtime 
+core = "6.x"
