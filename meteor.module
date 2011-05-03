@@ -18,7 +18,7 @@ function meteor_test_page() {
   </div>
 EOF;
 
-  meteor_client_join_channel('demo', 'function(data) { console.log(data); }');
+  meteor_client_join_channel('demo', 'function(data) { $("#test").append(data + "<br><br>"); }');
 
   return $output;
 }

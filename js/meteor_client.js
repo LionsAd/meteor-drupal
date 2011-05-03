@@ -1,6 +1,6 @@
 Drupal.behaviors.meteor_client = function() {
   // Run only once
-  if ( typeof Drupal.behaviors.meteor_client.counter == 'undefined' ) {
+  if ( typeof Drupal.behaviors.meteor_client.counter == 'undefined' && Drupal.settings.meteor != "undefined" ) {
     Drupal.behaviors.meteor_client.counter = 0;
 
     Meteor.hostid = Drupal.settings.meteor.hostid;
@@ -12,9 +12,15 @@ Drupal.behaviors.meteor_client = function() {
       var channel = Drupal.settings.meteor.channels[ch];
       Meteor.joinChannel(channel.channelid, channel.backtrack);
       Drupal.meteor_client.callbacks[channel.channelid] = channel.callback;
+      if (Drupal.settings.meteor.debug === true) {
+        console.log('Meteor: Subscribed to: ' + channel.channelid);
+      }
     }
     Meteor.mode = Drupal.settings.meteor.mode; 
     Meteor.connect();
+    if (Drupal.settings.meteor.debug === true) {
+      console.log('Meteor: Started listening on all channels.');
+    }
   }
 };
 
