@@ -60,7 +60,7 @@ function meteor_add_js() {
   $added = TRUE;
 }
 
-function meteor_client_join_channel($channelid, $callback, $backtrack = 0, $mode = 'stream') {
+function meteor_client_join_channel($channelid, $callback, $backtrack = FALSE, $mode = 'stream') {
 
   meteor_add_js(); 
  

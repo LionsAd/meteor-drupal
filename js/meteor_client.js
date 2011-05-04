@@ -10,7 +10,12 @@ Drupal.behaviors.meteor_client = function() {
     Meteor.registerEventCallback("process", Drupal.meteor_client.callback);
     for( ch in Drupal.settings.meteor.channels) {
       var channel = Drupal.settings.meteor.channels[ch];
-      Meteor.joinChannel(channel.channelid, channel.backtrack);
+      if (channel.backtrack === false) {
+        Meteor.joinChannel(channel.channelid);
+      }
+      else {
+        Meteor.joinChannel(channel.channelid, channel.backtrack);
+      }
       Drupal.meteor_client.callbacks[channel.channelid] = channel.callback;
       if (Drupal.settings.meteor.debug === true) {
         console.log('Meteor: Subscribed to: ' + channel.channelid);
