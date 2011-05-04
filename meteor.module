@@ -89,6 +89,19 @@ function meteor_open_channel($channelid) {
   return $mp;
 }
 
+function meteor_fwrite_stream($fp, $string) { 
+  $len = strlen($string);
+
+  for ($written = 0; $written < $len; $written += $fwrite) {
+    $fwrite = fwrite($fp, substr($string, $written), $len - $written);
+    if ($fwrite === false || $fwrite === 0) {
+      break;
+    }
+  }
+
+  return $written;
+}
+
 function meteor_send_message($mp, $message) {
   $msg = array(
     'data' => $message,
@@ -98,8 +111,7 @@ function meteor_send_message($mp, $message) {
   $json_message = rawurlencode(drupal_to_js($msg));
 
   $out = "ADDMESSAGE ".$mp->channelid." ".$json_message."\n";
-
-  fwrite($mp->fp, $out, strlen($out));
+  $written = meteor_fwrite_stream($mp->fp, $out);
 
   usleep(10000);
 
