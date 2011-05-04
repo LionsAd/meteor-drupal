@@ -80,26 +80,11 @@ function meteor_open_channel($channelid) {
     return NULL;
   }
 
-  socket_set_blocking($fp, FALSE);
-  
   $mp = (object) array(
     'channelid' => $channelid,
     'fp' => $fp
   );
   return $mp;
-}
-
-function meteor_fwrite_stream($fp, $string) { 
-  $len = strlen($string);
-
-  for ($written = 0; $written < $len; $written += $fwrite) {
-    $fwrite = fwrite($fp, substr($string, $written), $len - $written);
-    if ($fwrite === false || $fwrite === 0) {
-      break;
-    }
-  }
-
-  return $written;
 }
 
 function meteor_send_message($mp, $message) {
@@ -111,12 +96,15 @@ function meteor_send_message($mp, $message) {
   $json_message = rawurlencode(drupal_to_js($msg));
 
   $out = "ADDMESSAGE ".$mp->channelid." ".$json_message."\n";
-  $written = meteor_fwrite_stream($mp->fp, $out);
+  $written = fwrite($mp->fp, $out);
 
   usleep(10000);
 
-  // FIXME: Check for errors 
   $buf = fread($mp->fp, 4096);
+
+  if (substr($buf, 2, 2) != 'OK') {
+    return FALSE;
+  }
 
   return TRUE;
 }
