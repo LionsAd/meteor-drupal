@@ -99,7 +99,7 @@ function meteor_send_message($mp, $message) {
 
   $out = "ADDMESSAGE ".$mp->channelid." ".$json_message."\n";
 
-  fwrite($mp->fp, $out);
+  fwrite($mp->fp, $out, strlen($out));
 
   usleep(10000);
 
